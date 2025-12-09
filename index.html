@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stru Task Launcher</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23f97316%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x='3' y='3' width='18' height='18' rx='2' ry='2'/><path d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.74 1.74'/></svg>">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'accent-orange': '#f97316',
+                        'accent-rose': '#f43f5e',
+                        'accent-yellow': '#facc15',
+                        'accent-green': '#4ade80',
+                        'accent-purple': '#a855f7',
+                        'accent-pink': '#ec4899',
+                        'accent-red': '#ef4444',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Nunito', sans-serif; 
+            /* New background gradient from mr.html */
+            background: linear-gradient(135deg, #FFEFD5 0%, #FFFBEB 50%, #FCE7F6 100%); 
+        }
+        .stru-card { 
+            background: #ffffff; 
+            border: 1px solid #e5e7eb; 
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); 
+        }
+        .launch-tile { 
+            transition: all 0.2s; 
+            background-color: #fefefe; /* ensure light background */
+        }
+        .launch-tile:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06); 
+        }
+
+        /* Active Tab Fix: White text on dark gradient */
+        .active-tab {
+            background: linear-gradient(to right, #f97316, #f43f5e); /* accent-orange to accent-rose */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        // --- ICONS (Using generic placeholders since the old ones worked) ---
+        const Icons = {
+            Link: ({ className = 'w-4 h-4' }) => (
+                <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.74 1.74"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+            ),
+            ArrowRight: ({ className = 'w-5 h-5' }) => (
+                <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            ),
+            Clipboard: ({ className = 'w-4 h-4' }) => (
+                <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                </svg>
+            ),
+            Check: ({ className = 'w-4 h-4' }) => (
+                <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            ),
+        };
+
+        // Custom color mapping for consistency
+        const ACCENT_COLORS = {
+            'orange': { base: 'accent-orange', light: 'bg-orange-50', border: 'border-orange-300' },
+            'rose': { base: 'accent-rose', light: 'bg-rose-50', border: 'border-rose-300' },
+            'yellow': { base: 'accent-yellow', light: 'bg-yellow-50', border: 'border-yellow-300' },
+            'red': { base: 'accent-red', light: 'bg-red-50', border: 'border-red-300' },
+            'green': { base: 'accent-green', light: 'bg-green-50', border: 'border-green-300' },
+            'purple': { base: 'accent-purple', light: 'bg-purple-50', border: 'border-purple-300' },
+            'pink': { base: 'accent-pink', light: 'bg-pink-50', border: 'border-pink-300' },
+        };
+
+        // --- DATA STRUCTURE (Updated with user data and new color keys) ---
+        const TASK_CATEGORIES = [
+            { id: 'kit', title: 'Kit', icon: '📬', colorKey: 'orange',
+                tasks: [
+                    { name: 'Update Kit split tags', links: [{ url: 'https://app.kit.com/subscribers?per_page=50&subscribable_type=list&subscribable_ids=386229', label: 'Kit Subscribers' }] },
+                    { name: 'Subscriber cleanup', links: [{ url: 'https://app.kit.com/subscribers?per_page=50&subscribable_type=list&subscribable_ids=398440', label: 'Kit Subscribers' }] },
+                    { name: 'Split A', links: [{ url: 'https://app.kit.com/subscribers?subscribable_type=tag&subscribable_ids=4506106', label: 'Kit Tag A' }] },
+                    { name: 'Split B', links: [{ url: 'https://app.kit.com/subscribers?subscribable_type=tag&subscribable_ids=4506107', label: 'Kit Tag B' }] },
+                ]
+            },
+            { id: 'social', title: 'Social Posts', icon: '💬', colorKey: 'rose',
+                tasks: [
+                    { name: 'Spreadsheet', links: [{ url: 'https://docs.google.com/spreadsheets/d/1fwVnLt9sDM48uLNxtYfuEXKiOnDzi1o4vRNug2SGMws/edit?pli=1&gid=210731795#gid=210731795', label: 'Spreadsheet' }] },
+                    { name: 'YouTube community post', links: [
+                            { url: 'https://docs.google.com/spreadsheets/d/11XlB_4D0Fe1Gl0owJ65VfHhZYjbXmf0-1rZFQM1SpqQ/edit?gid=16510774#gid=16510774', label: 'Spreadsheet' },
+                            { url: 'https://www.canva.com/design/DAGHg4e6Reo/4JiIwZ3TZgkw9NTMmBGH9A/edit', label: 'Canva 1' },
+                            { url: 'https://www.canva.com/design/DAGhXlosxnM/caeM0or0rmainO1VIPGubQ/edit', label: 'Canva 2' },
+                            { url: 'https://www.canva.com/design/DAGbfLADYS0/QyErEKglSMcMoP_ZiOmT1A/edit', label: 'Canva 3' },
+                            { url: 'https://chatgpt.com/g/g-p-68b5a19cda448191a40721df023e4574-zh-youtube/project', label: 'ChatGPT Project' },
+                        ]
+                    },
+                    { name: 'Quotes', links: [
+                            { url: 'https://docs.google.com/spreadsheets/d/11XlB_4D0Fe1Gl0owJ65VfHhZYjbXmf0-1rZFQM1SpqQ/edit?gid=176250816#gid=176250816', label: 'Spreadsheet' },
+                            { url: 'https://app.contentstudio.io/zen-habits/publisher/planner/compact-view?order_by=newest&sort_column=status', label: 'Content Studio' },
+                        ]
+                    },
+                    { name: 'FLA theme', links: [
+                            { url: 'https://www.canva.com/design/DAGk0zIP4RM/AefHLH8SX4o6HEtM33BouA/edit', label: 'Canva' },
+                            { url: 'https://chatgpt.com/g/g-p-68b5a15e88d0819184ccf307f2714be2-fearless-living/project', label: 'ChatGPT Project' },
+                        ]
+                    }
+                ]
+            },
+            { id: 'blog', title: 'Blog Posts', icon: '📝', colorKey: 'yellow',
+                tasks: [
+                    { name: 'Spreadsheet', links: [{ url: 'https://docs.google.com/spreadsheets/d/1fwVnLt9sDM48uLNxtYfuEXKiOnDzi1o4vRNug2SGMws/edit?pli=1&gid=200368841#gid=200368841', label: 'Spreadsheet' }] },
+                    { name: 'Short Posts', links: [
+                            { url: 'https://drive.google.com/drive/u/0/folders/18lxpKzasbY8zDorgadAOUZaUdDqEOxUk', label: 'Drive Folder' },
+                            { url: 'https://app.kit.com/campaigns?status=draft', label: 'Kit Drafts' },
+                        ]
+                    },
+                    { name: 'Long Posts', links: [
+                            { url: 'https://drive.google.com/drive/u/0/folders/1nMjfCCs8-JGfjP-WYHEO_91FwO-22kRa', label: 'Drive Folder' },
+                            { url: 'https://app.kit.com/campaigns?status=draft', label: 'Kit Drafts' },
+                        ]
+                    },
+                    { name: 'FLA Posts', links: [
+                            { url: 'https://drive.google.com/drive/u/0/folders/1KFIrA_Gjgtx5ZQyNuBI030WAtmvM_Mbe', label: 'Drive Folder' },
+                            { url: 'https://app.kit.com/campaigns?status=draft', label: 'Kit Drafts' },
+                        ]
+                    },
+                    { name: 'Social Posts', links: [
+                            { url: 'https://www.canva.com/design/DAGgPY7Z2bE/V0tbrvFkdY2CH_cp-hXWPg/edit', label: 'Canva' },
+                            { url: 'https://chatgpt.com/g/g-p-68b5f856a49c81919596862c63d0615c-zen-habits/project', label: 'ChatGPT Project' },
+                            { url: 'https://app.contentstudio.io/zen-habits/publisher/planner/compact-view?order_by=newest&sort_column=status', label: 'Content Studio' },
+                        ]
+                    },
+                ]
+            },
+            { id: 'youtube', title: 'YouTube Videos', icon: '▶️', colorKey: 'red',
+                tasks: [
+                    { name: 'Spreadsheet', links: [{ url: 'https://docs.google.com/spreadsheets/d/1fwVnLt9sDM48uLNxtYfuEXKiOnDzi1o4vRNug2SGMws/edit?pli=1&gid=0#gid=0', label: 'Spreadsheet' }] },
+                    { name: 'Descript', links: [{ url: 'https://web.descript.com/9fa6b07e-f8aa-4545-a2cd-27fb7dfeddfa?editorVariant=default', label: 'Descript Project' }] },
+                    { name: 'Timestamps', links: [{ url: 'https://chatgpt.com/g/g-p-68b5a19cda448191a40721df023e4574-zh-youtube/c/68b710d2-fc04-8330-a16d-579eae9f6e3e', label: 'ChatGPT Timestamps' }] },
+                    { name: 'Flowy', links: [{ url: 'https://chatgpt.com/g/g-68b34dc6c6f0819198ab5cb684fc324d-flowy', label: 'Flowy GPT' }] },
+                    { name: 'Zen Habits channel', links: [{ url: 'https://www.youtube.com/@zenhabitsofficial/videos', label: 'YouTube Channel' }] },
+                    { name: 'ZH weekly feature', links: [
+                            { url: 'https://www.canva.com/design/DAF2zCAcIb8/VLUXRZzwWv_5GRj0GrvKGQ/edit', label: 'Canva' },
+                            { url: 'https://app.kit.com/campaigns?status=draft', label: 'Kit Drafts' },
+                        ]
+                    },
+                    { name: 'Social post', links: [{ url: 'https://www.canva.com/design/DAGgKeb3DvA/gtjDHo7Jpvf_Cx734Ug6Nw/edit', label: 'Canva' }] },
+                ]
+            },
+            { id: 'zhweekly', title: 'ZH Weekly', icon: '📰', colorKey: 'green',
+                tasks: [
+                    { name: 'Spreadsheet', links: [{ url: 'https://docs.google.com/spreadsheets/d/1fwVnLt9sDM48uLNxtYfuEXKiOnDzi1o4vRNug2SGMws/edit?pli=1&gid=39497764#gid=39497764', label: 'Spreadsheet' }] },
+                    { name: 'ZH weekly FLA feature', links: [
+                            { url: 'https://www.canva.com/folder/FAFNCZNGVhE', label: 'Canva Folder' },
+                            { url: 'https://app.kit.com/campaigns?status=draft', label: 'Kit Drafts' },
+                        ]
+                    },
+                    { name: 'ZH weekly mention', links: [
+                            { url: 'https://www.canva.com/design/DAGbfLADYS0/QyErEKglSMcMoP_ZiOmT1A/edit', label: 'Canva' },
+                            { url: 'https://chatgpt.com/g/g-p-68b5f856a49c81919596862c63d0615c-zen-habits/project', label: 'ChatGPT Project' },
+                            { url: 'https://docs.google.com/spreadsheets/d/1fwVnLt9sDM48uLNxtYfuEXKiOnDzi1o4vRNug2SGMws/edit?pli=1&gid=39497764#gid=39497764', label: 'Spreadsheet' },
+                        ]
+                    },
+                ]
+            },
+            { id: 'fla', title: 'FLA Workshops', icon: '🧘‍♀️', colorKey: 'purple',
+                tasks: [
+                    { name: 'Canva images', links: [{ url: 'https://www.canva.com/folder/FAFNCZNGVhE', label: 'Canva Folder' }] },
+                    { name: 'ChatGPT Project', links: [{ url: 'https://chatgpt.com/g/g-p-68b5a15e88d0819184ccf307f2714be2-fearless-living/project', label: 'ChatGPT Project' }] },
+                    { name: 'Circle event', links: [{ url: 'https://community.zenhabits.net/c/fla-events/', label: 'Circle Events' }] },
+                    { name: 'AddEvent', links: [{ url: 'https://dashboard.addevent.com/', label: 'AddEvent Dashboard' }] },
+                    { name: 'Kit Post', links: [{ url: 'https://app.kit.com/campaigns?status=draft', label: 'Kit Drafts' }] },
+                    { name: 'Circle Announcements', links: [{ url: 'https://community.zenhabits.net/c/announcements/', label: 'Circle Announcements' }] },
+                    { name: 'Social posts', links: [{ url: 'https://www.canva.com/folder/FAFNCZNGVhE', label: 'Canva Folder' }] },
+                    { name: 'Circle Recordings', links: [{ url: 'https://community.zenhabits.net/c/call-workshop-recordings/', label: 'Circle Recordings' }] },
+                ]
+            },
+            { id: 'linkedin', title: 'LinkedIn', icon: '🔗', colorKey: 'pink',
+                tasks: [
+                    { name: 'Descript', links: [{ url: 'https://web.descript.com/b00a7e8c-65d7-4ebc-807a-fd28281b4de6/7e9bc?editorVariant=default', label: 'Descript Project' }] },
+                    { name: 'Canva', links: [{ url: 'https://www.canva.com/folder/FAFNCYf_LK8', label: 'Canva Folder' }] },
+                    { name: 'LinkedIn', links: [{ url: 'https://www.linkedin.com/in/leo-babauta-zenhabits/', label: 'LinkedIn Profile' }] },
+                    { name: 'ChatGPT', links: [{ url: 'https://chatgpt.com/g/g-p-68b5f856a49c81919596862c63d0615c-zen-habits/project', label: 'ChatGPT Project' }] },
+                ]
+            }
+        ];
+
+        // --- COMPONENTS ---
+
+        function TaskTile({ task, colorKey }) {
+            const [copied, setCopied] = useState(false);
+            const colors = ACCENT_COLORS[colorKey];
+            const baseClass = colors.base; // e.g., accent-rose
+            const lightBgClass = colors.light; // e.g., bg-rose-50
+            const borderClass = colors.border; // e.g., border-rose-300
+            
+            // Opens all links in new tabs
+            const handleLaunch = () => {
+                task.links.forEach(link => {
+                    window.open(link.url, '_blank');
+                });
+            };
+
+            // Copies all links to the clipboard
+            const handleCopy = (e) => {
+                e.stopPropagation(); // Prevent the main launch action
+                const linksText = task.links.map(link => link.url).join('\n');
+                navigator.clipboard.writeText(linksText).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                });
+            };
+
+            return (
+                <div 
+                    onClick={handleLaunch} 
+                    className={`launch-tile stru-card ${lightBgClass} border-2 ${borderClass} rounded-2xl p-4 cursor-pointer flex flex-col justify-between`}
+                >
+                    <div className="flex items-center justify-between mb-2">
+                        <div className={`text-base font-extrabold text-gray-800 leading-tight`}>{task.name}</div>
+                        
+                        {/* Copy Button */}
+                        <button
+                            onClick={handleCopy}
+                            className={`p-1.5 rounded-full transition-colors duration-300 text-${baseClass} hover:bg-white`}
+                            title="Copy Links to Clipboard"
+                        >
+                            {copied ? <Icons.Check className="text-green-500 w-4 h-4" /> : <Icons.Clipboard className="w-4 h-4" />}
+                        </button>
+                    </div>
+                    
+                    <div className="flex justify-between items-center mt-2">
+                        <div className="flex items-center text-xs font-medium text-gray-500 gap-1">
+                            <Icons.Link className="text-gray-400 w-3 h-3" />
+                            <span>{task.links.length} Link{task.links.length !== 1 ? 's' : ''}</span>
+                        </div>
+                        
+                        {/* Launch Icon */}
+                        <div className={`p-1 rounded-full bg-${baseClass}/10 border border-${baseClass}/40`}>
+                            <Icons.ArrowRight className={`w-4 h-4 text-${baseClass}`} />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function TaskLauncherApp() {
+            const [activeTab, setActiveTab] = useState(TASK_CATEGORIES[0].id);
+
+            const activeCategory = useMemo(() => {
+                return TASK_CATEGORIES.find(cat => cat.id === activeTab);
+            }, [activeTab]);
+
+            return (
+                <div className="min-h-screen p-4 md:p-10">
+                    <div className="max-w-6xl mx-auto">
+                        
+                        {/* Main Header (Stru Style) */}
+                        <header className="mb-8 pt-4">
+                            <h1 className="text-4xl font-extrabold text-gray-900 mb-1">Workspace Launcher</h1>
+                            <p className="text-lg text-gray-500 font-medium">Grouped links for structured task flow.</p>
+                        </header>
+                        
+                        {/* Tab Navigation (Smaller and Fixed) */}
+                        {/* Removed overflow-x-auto, reduced font size and padding */}
+                        <div className="flex justify-between space-x-2 pb-3 mb-6 border-b-2 border-gray-200 flex-wrap">
+                            {TASK_CATEGORIES.map(cat => (
+                                <button 
+                                    key={cat.id}
+                                    onClick={() => setActiveTab(cat.id)}
+                                    // Smaller size: px-4 py-2, text-base
+                                    className={`flex-1 min-w-0 max-w-fit px-3 py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${
+                                        activeTab === cat.id 
+                                            ? 'active-tab' // Use custom class for white text on dark gradient
+                                            : 'bg-white text-gray-600 hover:bg-gray-100'
+                                    }`}
+                                >
+                                    {cat.icon} <span className="truncate">{cat.title}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Task Grid */}
+                        <div className="stru-card p-6 rounded-3xl">
+                            <h2 className={`text-2xl font-bold mb-6 flex items-center gap-3 text-gray-800`}>
+                                {activeCategory.icon} {activeCategory.title} Tasks
+                            </h2>
+                            {/* Adjusted grid to 4 columns on large screens for tighter fit */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {activeCategory.tasks.map(task => (
+                                    <TaskTile 
+                                        key={task.name} 
+                                        task={task} 
+                                        colorKey={activeCategory.colorKey} 
+                                    />
+                                ))}
+                            </div>
+                            {activeCategory.tasks.length === 0 && (
+                                <p className="text-center text-gray-400 py-10">No tasks defined for this category.</p>
+                            )}
+                        </div>
+
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TaskLauncherApp />);
+    </script>
+</body>
+</html>
