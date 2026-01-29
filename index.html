@@ -247,10 +247,11 @@
             
             // This function now opens all links, relying on the user having allowed pop-ups
             const handleLaunch = () => {
-                task.links.forEach(link => {
-                    window.open(link.url, '_blank');
-                });
-            };
+    task.links.forEach(link => {
+        // Added 'noopener=yes' to the third argument
+        window.open(link.url, '_blank', 'noopener=yes');
+    });
+};
 
             const handleCopy = (e) => {
                 e.stopPropagation(); 
@@ -361,6 +362,7 @@
     </script>
 </body>
 </html>
+
 
 
 
