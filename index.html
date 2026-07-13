@@ -240,6 +240,19 @@
                 ]
             },
             {
+                id: 'fearless-mastery', title: 'Fearless Mastery', colorKey: 'orange',
+                tasks: [
+                    {
+                        name: 'Weekly Check-In', links: [
+                            { url: 'https://chatgpt.com/g/g-p-69853def6870819189aa470fb2f423db-fmp-circle-lessons/project', label: 'ChatGPT Project' },
+                            { url: 'https://docs.google.com/document/d/1zAI8pSlTv19RjUTbRCuYbCHVNaIDnyjegXahdg0NErQ/edit?tab=t.0', label: 'Google Doc' },
+                            { url: 'https://www.canva.com/folder/FAFdc7A0ndE', label: 'Canva Folder' },
+                            { url: 'https://community.zenhabits.net/settings/posts', label: 'Circle Posts' },
+                        ]
+                    },
+                ]
+            },
+            {
                 id: 'fla', title: 'FLA Workshops', colorKey: 'purple',
                 tasks: [
                     { name: 'Canva images', links: [{ url: 'https://www.canva.com/folder/FAFNCZNGVhE', label: 'Canva Folder' }] },
@@ -297,7 +310,7 @@
                     className={`launch-tile stru-card ${lightBgClass} border-2 ${borderClass} rounded-2xl p-4 cursor-pointer flex flex-col justify-between`}
                 >
                     <div className="flex items-center justify-between mb-2">
-                        <div className={`text-base font-extrabold text-gray-800 leading-tight`}>{task.name}</div>
+                        <div className={`text-[0.9375rem] font-semibold text-gray-800 leading-tight`}>{task.name}</div>
 
                         {/* Copy Button */}
                         <button
@@ -341,43 +354,45 @@
                             <p className="text-lg text-gray-500 font-medium">Grouped links for structured task flow.</p>
                         </header>
 
-                        {/* Tab Navigation (Smaller tabs with less side space) */}
-                        <div className="flex justify-between pb-3 mb-6 border-b-2 border-gray-200 flex-wrap">
-                            {TASK_CATEGORIES.map(cat => (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => setActiveTab(cat.id)}
-                                    // Increased size (py-3, text-base) and reduced side spacing by relying on padding
-                                    className={`px-4 py-3 rounded-lg font-semibold text-base transition-all flex items-center justify-center ${activeTab === cat.id
-                                        ? 'active-tab'
-                                        : 'bg-white text-gray-600 hover:bg-gray-100'
-                                        }`}
-                                    style={{ flex: 1, margin: '0 4px', minWidth: '100px' }} // Custom style for smaller, fixed spacing
-                                >
-                                    <span className="truncate">{cat.title}</span>
-                                </button>
-                            ))}
-                        </div>
+                        <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+                            <aside className="stru-card p-4 rounded-3xl h-fit">
+                                <div className="mb-3 px-2">
+                                    <h2 className="text-sm font-extrabold uppercase tracking-[0.2em] text-gray-500">Sections</h2>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    {TASK_CATEGORIES.map(cat => (
+                                        <button
+                                            key={cat.id}
+                                            onClick={() => setActiveTab(cat.id)}
+                                            className={`w-full px-4 py-3 rounded-lg font-bold text-left text-xs uppercase tracking-[0.12em] transition-all ${activeTab === cat.id
+                                                ? 'active-tab'
+                                                : 'bg-white text-gray-600 hover:bg-gray-100'
+                                                }`}
+                                        >
+                                            {cat.title}
+                                        </button>
+                                    ))}
+                                </div>
+                            </aside>
 
-                        {/* Task Grid */}
-                        <div className="stru-card p-6 rounded-3xl">
-                            {/* Removed "Tasks" from title and no emoji */}
-                            <h2 className={`text-2xl font-bold mb-6 flex items-center gap-3 text-gray-800`}>
-                                {activeCategory.title}
-                            </h2>
-                            {/* Adjusted grid to 4 columns on large screens for tighter fit */}
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {activeCategory.tasks.map(task => (
-                                    <TaskTile
-                                        key={task.name}
-                                        task={task}
-                                        colorKey={activeCategory.colorKey}
-                                    />
-                                ))}
+                            {/* Task Grid */}
+                            <div className="stru-card p-6 rounded-3xl">
+                                <h2 className={`text-2xl font-bold mb-6 flex items-center gap-3 text-gray-800`}>
+                                    {activeCategory.title}
+                                </h2>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {activeCategory.tasks.map(task => (
+                                        <TaskTile
+                                            key={task.name}
+                                            task={task}
+                                            colorKey={activeCategory.colorKey}
+                                        />
+                                    ))}
+                                </div>
+                                {activeCategory.tasks.length === 0 && (
+                                    <p className="text-center text-gray-400 py-10">No tasks defined for this category.</p>
+                                )}
                             </div>
-                            {activeCategory.tasks.length === 0 && (
-                                <p className="text-center text-gray-400 py-10">No tasks defined for this category.</p>
-                            )}
                         </div>
 
                     </div>
